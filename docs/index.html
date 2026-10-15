@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shill: commits in, posts out</title>
+<meta name="description" content="your repo's shill. paste a GitHub repo and it reads the commits and writes the release notes, the next semver, the changelog entry and post drafts for x, discord, telegram and linkedin.">
+<meta name="theme-color" content="#FFF5F8">
+<meta property="og:title" content="shill: commits in, posts out">
+<meta property="og:image" content="https://shillcli.com/preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="21.05 18.265 64 64"%3E%3Ctitle%3Eshill%3C/title%3E%3Cpath fill="%23FF2E8B" d="M24 40.5Q24 37 27.5 37H35V57H27.5Q24 57 24 53.5ZM37 37L58.5 26.2Q63 24 63 29V65Q63 70 58.5 67.8L37 57ZM39.5 58.5L46.5 60.5L50.2 72Q51 75 48 75H45.5Q43 75 42.3 72.6Z"/%3E%3Cpath d="M69 39.5Q73.5 47 69 54.5" fill="none" stroke="%23FF2E8B" stroke-width="5.2" stroke-linecap="round"/%3E%3Cpath d="M75.5 33Q83.5 47 75.5 61" fill="none" stroke="%23FF2E8B" stroke-width="5.2" stroke-linecap="round"/%3E%3C/svg%3E">
+<style>
+@font-face { font-family: "Plus Jakarta Sans"; src: url(fonts/plus-jakarta-sans-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Plus Jakarta Sans"; src: url(fonts/plus-jakarta-sans-latin-700-normal.woff2) format("woff2"); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: "Plus Jakarta Sans"; src: url(fonts/plus-jakarta-sans-latin-800-normal.woff2) format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url(fonts/space-mono-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url(fonts/space-mono-latin-700-normal.woff2) format("woff2"); font-weight: 700; font-display: swap; }
+:root {
+  --bg: #FFF5F8; --card: #FFFFFF; --raised: #FFEAF1; --line: #F6D9E3; --text: #2A1420; --muted: #8E6C7B;
+  --accent: #FF2E8B; --on-accent: #FFFFFF; --accent-ring: rgba(255,46,139,.30); --accent-tint: rgba(255,46,139,.12); --second: #7C5CFF; --second-tint: rgba(124,92,255,.12);
+  --shadow: 0 8px 24px rgba(255,46,139,.10); --shadow-lg: 0 24px 64px rgba(255,46,139,.10);
+  --sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 500 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+body { overflow-x: clip; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 2px; border-radius: 8px; }
+code, pre, .mono { font-family: var(--mono); }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 32px; }
+
+nav { display: flex; align-items: center; gap: 32px; padding: 24px 0; }
+.logo { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 24px; letter-spacing: -.03em; }
+.logo img { width: 36px; height: 36px; display: block; border-radius: 9px; }
+nav .links { display: flex; gap: 24px; font-size: 15px; color: var(--muted); margin-left: auto; }
+nav .links a:hover { color: var(--text); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 12px 24px; font-weight: 800; font-size: 15px; border: 1px solid var(--line); background: var(--card); cursor: pointer; transition: transform .15s, box-shadow .15s, background .15s; font-family: var(--sans); color: var(--text); }
+.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; box-shadow: 0 8px 20px var(--accent-tint); }
+.btn.primary:hover { box-shadow: 0 12px 28px var(--accent-ring); }
+.btn.sm { padding: 8px 16px; font-size: 14px; }
+
+.hero { padding: 24px 0 32px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px 6px 8px; font-size: 13px; color: var(--muted); box-shadow: var(--shadow); }
+.chip b { background: var(--raised); color: var(--text); border-radius: 999px; padding: 2px 10px; font: 700 12px var(--mono); }
+h1 { font-size: clamp(36px, 4.4vw, 54px); line-height: 1.02; letter-spacing: -.045em; font-weight: 800; margin: 20px 0 16px; }
+h1 span { color: var(--accent); }
+.lead { font-size: 19px; color: var(--muted); max-width: 720px; margin: 0 0 24px; }
+.install { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 8px 8px 8px 24px; max-width: 460px; box-shadow: var(--shadow); }
+.install code { flex: 1; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.install code i { color: var(--muted); font-style: normal; }
+.sub-cta { display: flex; gap: 24px; margin-top: 24px; font-size: 15px; color: var(--muted); }
+.sub-cta a { border-bottom: 1px solid var(--line); } .sub-cta a:hover { color: var(--text); border-color: var(--text); }
+
+/* stacked post previews */
+.stack { position: relative; display: grid; gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
+.post { padding: 20px; }
+.post.lift { box-shadow: var(--shadow-lg); }
+.post.offset { margin-left: 48px; }
+.ph { display: flex; align-items: center; gap: 12px; }
+.av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--raised); font-weight: 800; flex: none; }
+.nm { font-weight: 800; font-size: 15px; }
+.hd { color: var(--muted); font-size: 14px; }
+.ch { margin-left: auto; font: 400 12px var(--mono); color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+.ch svg { width: 18px; height: 18px; transform: rotate(-90deg); }
+.txt { white-space: pre-wrap; font-size: 15px; line-height: 1.5; margin-top: 12px; }
+.txt a, .rich a { color: var(--second); }
+.tag { font-size: 10px; font-weight: 800; background: var(--second); color: #fff; border-radius: 4px; padding: 0 4px; margin-left: 4px; vertical-align: 2px; }
+.rich { font-size: 14.5px; line-height: 1.5; margin-top: 8px; }
+.rich h4 { margin: 0 0 4px; font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+.rich ul { margin: 4px 0 0; padding-left: 20px; }
+.label { position: absolute; font: 700 12px var(--mono); background: var(--text); color: #fff; border-radius: 999px; padding: 4px 12px; }
+
+section { padding: 96px 0; }
+.eyebrow { font: 700 13px var(--mono); color: var(--muted); letter-spacing: .02em; margin: 0 0 16px; }
+h2 { font-size: clamp(32px, 4vw, 48px); line-height: 1.05; letter-spacing: -.04em; font-weight: 800; margin: 0 0 16px; max-width: 720px; }
+.intro { color: var(--muted); font-size: 18px; max-width: 620px; margin: 0 0 48px; }
+
+.channels { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+.chan { padding: 24px; display: grid; gap: 8px; }
+.chan b { font-size: 16px; font-weight: 800; }
+.chan .n { font: 700 32px/1 var(--mono); letter-spacing: -.04em; font-variant-numeric: tabular-nums; margin-top: 16px; }
+.chan small { color: var(--muted); font-size: 13px; }
+
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.feat { padding: 32px; }
+.feat code { display: inline-block; font-size: 12px; background: var(--raised); border-radius: 999px; padding: 2px 12px; margin-bottom: 16px; }
+.feat h3 { margin: 0 0 8px; font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+.feat p { margin: 0; color: var(--muted); font-size: 15px; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 64px; align-items: center; }
+.term { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow-lg); overflow: hidden; }
+.term .bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--raised) 50%, white); }
+.term .bar i { width: 12px; height: 12px; border-radius: 50%; background: var(--line); }
+.term .bar span { margin-left: auto; font: 400 12px var(--mono); color: var(--muted); }
+.term pre { margin: 0; padding: 24px; font-size: 13.5px; line-height: 1.7; overflow-x: auto; color: var(--text); }
+.p { color: var(--accent); font-weight: 700; } .m { color: var(--muted); } .k { font-weight: 700; } .v { color: var(--accent); font-weight: 700; }
+.steps { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; counter-reset: s; }
+.steps li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px; align-items: start; }
+.steps li::before { counter-increment: s; content: counter(s); width: 40px; height: 40px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); display: grid; place-items: center; font: 700 14px var(--mono); }
+.steps b { display: block; font-size: 17px; }
+.steps span { color: var(--muted); font-size: 15px; }
+
+.tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
+.tool { padding: 24px; }
+.tool code { font-weight: 700; font-size: 14px; }
+.tool p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+.code { background: var(--text); color: #F7EEF2; border-radius: 20px; padding: 24px; font-size: 13.5px; line-height: 1.7; overflow-x: auto; margin: 0; }
+.code .c { color: #B9A0AC; } .code .s { color: #FFB3D4; }
+
+.faq { display: grid; gap: 12px; max-width: 820px; }
+.faq details { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 0 24px; transition: box-shadow .15s; }
+.faq details[open] { box-shadow: var(--shadow); }
+.faq summary { cursor: pointer; list-style: none; padding: 20px 0; font-weight: 800; font-size: 17px; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font: 400 20px/1 var(--mono); color: var(--muted); }
+.faq details[open] summary::after { content: "\2212"; }
+.faq p { margin: 0 0 24px; color: var(--muted); }
+
+.final { text-align: center; padding: 64px 32px; border-radius: 32px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); display: grid; justify-items: center; gap: 24px; }
+.final img { width: 80px; height: 80px; border-radius: 20px; }
+.final h2 { margin: 0; }
+footer { padding: 48px 0 64px; display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+footer a { border-bottom: 1px solid var(--line); } footer a:hover { color: var(--text); }
+
+
+/* the tool */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.box { padding: 12px; display: grid; gap: 12px; box-shadow: var(--shadow-lg); }
+.field { display: flex; gap: 12px; }
+.inp { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 0 16px; transition: border-color .15s, box-shadow .15s; }
+.inp:hover { border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.inp:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-tint); background: var(--card); }
+.inp svg { width: 20px; height: 20px; color: var(--muted); flex: none; }
+.inp input { flex: 1; min-width: 0; border: 0; outline: none; background: none; font: 500 17px var(--sans); color: var(--text); padding: 16px 0; }
+.inp input::placeholder { color: color-mix(in srgb, var(--muted) 70%, white); }
+.go { border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); padding: 0 28px; min-height: 56px; min-width: 196px; font: 800 16px var(--sans); letter-spacing: -.01em; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px var(--accent-tint); transition: transform .15s, box-shadow .15s, filter .15s; }
+.go:hover { transform: translateY(-1px); box-shadow: 0 12px 28px var(--accent-ring); }
+.go[disabled] { cursor: progress; filter: saturate(.7); transform: none; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.opts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 4px 0 0; }
+.seg { display: inline-flex; background: var(--raised); border-radius: 999px; padding: 4px; gap: 4px; }
+.seg button { white-space: nowrap; border: 0; background: none; border-radius: 999px; padding: 8px 14px; font: 700 13px var(--sans); color: var(--muted); cursor: pointer; transition: background .15s, color .15s; }
+.seg button:hover { color: var(--text); }
+.seg button.on { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(255,46,139,.10); }
+.nsel select { appearance: none; -webkit-appearance: none; border: 1px solid var(--line); background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238E6C7B' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center / 10px 6px; border-radius: 999px; padding: 8px 32px 8px 14px; font: 700 13px var(--mono); color: var(--text); cursor: pointer; }
+.nsel select:disabled { opacity: .45; cursor: default; }
+.try { margin-left: auto; font-size: 14px; color: var(--muted); display: flex; gap: 4px 12px; align-items: baseline; flex-wrap: wrap; }
+.try a { color: var(--text); font-weight: 700; border-bottom: 2px solid var(--accent); }
+.try a:hover { color: var(--accent); }
+
+.results { padding: 8px 0 32px; min-height: 640px; }
+.results .card { box-shadow: var(--shadow); }
+.min { min-width: 0; }
+.demo-note, .warns { padding: 12px 16px; font-size: 14px; border-radius: 16px; margin-bottom: 16px; }
+.demo-note { background: var(--card); border-style: dashed; }
+.demo-note b { color: var(--accent); }
+.warns { background: var(--second-tint); border: 0; box-shadow: none !important; }
+.linkish { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--accent); cursor: pointer; }
+.rhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 24px; }
+.rhead .eyebrow { margin: 0; font-size: 12px; }
+.rtitle { font-size: 30px; line-height: 1.15; letter-spacing: -.03em; margin: 4px 0 0; max-width: none; word-break: break-word; }
+.rtitle .num { font-family: var(--mono); font-size: 26px; color: var(--accent); letter-spacing: -.02em; }
+.rmeta { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+.rmeta a { border-bottom: 1px solid var(--line); } .rmeta a:hover { color: var(--text); }
+.tabs { background: var(--card); border: 1px solid var(--line); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.tabs button.on { background: var(--raised); box-shadow: none; }
+.rgrid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.rail { display: grid; gap: 16px; }
+.note { font-size: 12.5px; color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none; }
+.note.tpl { margin: 0 0 16px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); } .sm { font-size: 13px; }
+.previews { columns: 2 300px; column-gap: 16px; }
+.pv { break-inside: avoid; margin: 0 0 16px; overflow: hidden; }
+.pv > header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--raised) 45%, white); }
+.pv > header b { font-size: 13px; }
+.pv .sp { flex: 1; }
+.pv .body { padding: 16px; }
+.pv .foot2 { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); }
+.ring { display: inline-flex; align-items: center; gap: 8px; font: 400 12px var(--mono); color: var(--muted); }
+.ring svg { width: 20px; height: 20px; transform: rotate(-90deg); }
+.ring .t { stroke: var(--line); } .ring circle.p { stroke: var(--text); }
+.ring.hot circle.p { stroke: var(--accent); }
+.ghost { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; font: 700 12px var(--sans); color: var(--text); cursor: pointer; transition: background .15s, border-color .15s; white-space: nowrap; }
+.ghost:hover { background: var(--raised); border-color: color-mix(in srgb, var(--accent) 25%, var(--line)); }
+.ghost.done { background: var(--text); color: #fff; border-color: var(--text); }
+.results .av { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--raised); color: var(--text); font-weight: 800; font-size: 16px; object-fit: cover; }
+.results .av.sq { border-radius: 12px; }
+.results .av.sm { width: 32px; height: 32px; font-size: 13px; }
+.results .nm { font-weight: 800; font-size: 14px; letter-spacing: -.01em; }
+.results .hd { color: var(--muted); font-weight: 500; font-size: 14px; } .results .hd.sm { font-size: 12px; }
+.results .txt { white-space: pre-wrap; word-break: break-word; font-size: 14.5px; line-height: 1.5; margin-top: 4px; }
+.results .txt a, .results .rich a { color: var(--second); }
+.results .txt a:hover, .results .rich a:hover { text-decoration: underline; }
+.tw { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 12px; position: relative; padding-bottom: 16px; }
+.tw:last-child { padding-bottom: 0; }
+.tw:not(:last-child)::before { content: ""; position: absolute; left: 19px; top: 44px; bottom: 0; width: 2px; background: var(--line); border-radius: 2px; }
+.tw .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.dc { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 16px; }
+.results .tag { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .04em; background: var(--second); color: #fff; border-radius: 4px; padding: 0 4px; margin-left: 4px; vertical-align: 2px; }
+.results .rich { font-size: 14px; line-height: 1.5; word-break: break-word; margin: 0; }
+.results .rich h3 { font-size: 18px; margin: 4px 0; font-weight: 800; letter-spacing: -.02em; }
+.results .rich h4 { font-size: 15px; margin: 20px 0 8px; font-weight: 800; }
+.results .rich p { margin: 0 0 4px; }
+.results .rich ul { margin: 0 0 8px; padding-left: 20px; }
+.results .rich li { margin: 2px 0; }
+.results .rich li.subli { list-style: circle; margin-left: 16px; color: var(--muted); }
+.tgwrap { background: var(--raised); border-radius: 16px; padding: 16px; }
+.bubble { --fade: #fff; background: var(--card); border-radius: 16px 16px 16px 4px; padding: 12px 16px 8px; box-shadow: 0 2px 8px rgba(255,46,139,.10); }
+.bubble .nm { color: var(--second); font-size: 13px; margin-bottom: 4px; }
+.bubble .meta { text-align: right; font-size: 11px; color: var(--muted); }
+.li .who { display: flex; gap: 12px; margin-bottom: 12px; }
+.li .sub2 { font-size: 12px; color: var(--muted); }
+.clamp { max-height: 300px; overflow: hidden; position: relative; }
+.clamp::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 72px; background: linear-gradient(transparent, var(--fade, #fff)); pointer-events: none; }
+.open .clamp { max-height: none; } .open .clamp::after { display: none; }
+.more { margin-top: 8px; border: 0; background: none; padding: 0; font: 700 13px var(--sans); color: var(--text); cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.more:hover { text-decoration-color: var(--text); }
+.pill { display: inline-flex; align-items: center; font: 800 12px var(--sans); border-radius: 999px; padding: 2px 10px; background: var(--raised); color: var(--text); letter-spacing: 0; text-transform: none; }
+.pill.num { font: 700 11px var(--mono); }
+.pill.v { background: var(--second-tint); color: var(--second); }
+.pill.est { background: var(--second-tint); color: var(--second); vertical-align: 1px; margin-left: 4px; }
+.doc { padding: 24px; }
+.doc .bar2 { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.doc .eyebrow, .vcard .eyebrow, .list .eyebrow { margin: 0; font-size: 12px; }
+.doc .rich h3 { font-size: 22px; margin-bottom: 12px; }
+.results code { font: 400 12.5px var(--mono); background: var(--raised); border-radius: 6px; padding: 1px 6px; }
+.raw { margin: 0; white-space: pre-wrap; word-break: break-word; font: 400 12.5px/1.7 var(--mono); color: var(--text); background: var(--raised); border-radius: 16px; padding: 20px; }
+.vcard { padding: 24px; display: grid; gap: 14px; }
+.big { font: 700 44px/1 var(--mono); letter-spacing: -.04em; color: var(--accent); word-break: break-all; }
+.from { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.why { margin: 0; padding: 12px 16px; background: var(--raised); border-radius: 12px; font-size: 13px; line-height: 1.5; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); padding-top: 14px; }
+.stats div { display: grid; gap: 2px; }
+.stats b { font-size: 20px; letter-spacing: -.02em; } .stats b .muted { font-size: 13px; }
+.stats span { font-size: 12px; color: var(--muted); }
+.list { padding: 20px 24px; display: grid; gap: 4px; }
+.list .eyebrow { margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.hl { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.hl:nth-child(2) { border-top: 0; }
+.hl .rk { font-size: 13px; font-weight: 700; color: var(--muted); padding-top: 1px; }
+.hl .s { font-weight: 700; font-size: 13.5px; line-height: 1.4; word-break: break-word; }
+.hl .m { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+.meter { flex: 1; height: 6px; border-radius: 99px; background: var(--raised); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 99px; background: color-mix(in srgb, var(--accent) 45%, white); }
+.ppl { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.ppl .n { font-weight: 700; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ppl .c { margin-left: auto; font-size: 12px; color: var(--muted); }
+.rate { margin: 0 4px; }
+.state { padding: 24px; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px; max-width: 760px; }
+.state .ic { width: 40px; height: 40px; border-radius: 50%; background: var(--raised); display: grid; place-items: center; font: 700 16px var(--mono); }
+.state.err { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.state.err .ic { background: var(--accent-tint); color: var(--accent); }
+.state h3 { margin: 6px 0 4px; font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+.state p { margin: 0 0 16px; color: var(--muted); font-size: 15px; word-break: break-word; }
+.state code { font: 400 12.5px var(--mono); background: var(--raised); border-radius: 6px; padding: 1px 6px; color: var(--text); overflow-wrap: anywhere; }
+.sk { background: linear-gradient(90deg, var(--raised) 0%, color-mix(in srgb, var(--raised) 40%, white) 50%, var(--raised) 100%); background-size: 200% 100%; animation: sh 1.2s ease-in-out infinite; border-radius: 8px; }
+@keyframes sh { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.skc { padding: 16px; display: grid; gap: 12px; }
+.skrow { display: flex; gap: 12px; align-items: center; }
+
+@media (max-width: 1024px) {
+  .rgrid { grid-template-columns: minmax(0, 1fr); }
+  .rail { grid-row: 1; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
+  .hero, .split { grid-template-columns: 1fr; gap: 48px; }
+  .channels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  nav .links { display: none; } nav .btn { margin-left: auto; }
+  .hero { padding: 8px 0 24px; }
+  .lead { font-size: 16px; margin-bottom: 20px; }
+  h1 { font-size: 34px; margin: 16px 0 12px; }
+  .box { padding: 8px; gap: 8px; border-radius: 16px; }
+  .field { flex-direction: column; gap: 8px; }
+  .inp input { font-size: 16px; padding: 14px 0; }
+  .go { min-height: 52px; width: 100%; }
+  .opts { gap: 8px; }
+  .opts .seg { flex: 1; }
+  .opts .seg button { flex: 1; padding: 8px 8px; }
+  .try { margin: 4px 0 0 4px; font-size: 13px; width: 100%; }
+  .results { min-height: 0; }
+  .rtitle { font-size: 24px; } .rtitle .num { font-size: 21px; }
+  .rhead { margin-bottom: 16px; }
+  .tabs { width: 100%; display: grid; grid-template-columns: 1fr 1fr; border-radius: 20px; }
+  .tabs button { padding: 8px 10px; }
+  .previews { columns: 1; }
+  .rail { grid-template-columns: minmax(0, 1fr); }
+  .doc { padding: 16px; }
+  .raw { padding: 14px; font-size: 12px; }
+  .state { padding: 16px; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; }
+  .state .ic { width: 32px; height: 32px; }
+  .post.offset { margin-left: 16px; }
+  section { padding: 64px 0; }
+  .channels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .features, .tools { grid-template-columns: 1fr; }
+  .feat { padding: 24px; }
+  .final { padding: 48px 16px; }
+  .term pre, .code { font-size: 12px; padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="#"><img src="data:image/webp;base64,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" alt="">shill</a>
+    <div class="links"><a href="#tool">Try it</a><a href="#channels">Channels</a><a href="#features">Features</a><a href="#action">Action</a><a href="#mcp">MCP</a><a href="#faq">FAQ</a></div>
+    <a class="btn sm" href="https://github.com/OWNER/shill">GitHub</a>
+  </nav>
+
+  <header class="hero" id="tool">
+    <span class="chip"><b>v1.1.0</b>runs in your browser. no install, no key.</span>
+    <h1>your repo's shill. <span>commits in, posts out.</span></h1>
+    <p class="lead">paste a public GitHub repo. get the next version, the release notes, a CHANGELOG entry and drafts for x, discord, telegram and linkedin.</p>
+    <form class="card box" id="f" autocomplete="off" novalidate>
+      <div class="field">
+        <label class="inp"><span class="sr">GitHub repository</span><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.66 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"/></svg><input id="repo" name="repo" type="text" placeholder="owner/repo or a github.com link" spellcheck="false" autocapitalize="off" enterkeyhint="go"></label>
+        <button class="go" id="go" type="submit">Write the drafts</button>
+      </div>
+      <div class="opts">
+        <div class="seg" role="radiogroup" aria-label="Commit range">
+          <button type="button" role="radio" data-range="release" class="on" aria-checked="true">since latest release</button>
+          <button type="button" role="radio" data-range="commits" aria-checked="false">last commits</button>
+        </div>
+        <label class="nsel"><span class="sr">Number of commits</span><select id="n" disabled><option value="10">10</option><option value="20">20</option><option value="30" selected>30</option><option value="50">50</option><option value="100">100</option></select></label>
+        <span class="try">try it with an example: <a href="?repo=honojs/hono#tool" data-example="honojs/hono">honojs/hono</a><a href="?repo=vitejs/vite#tool" data-example="vitejs/vite">vitejs/vite</a></span>
+      </div>
+    </form>
+  </header>
+  <div id="results" class="results" aria-live="polite"></div>
+</div>
+
+<section id="channels"><div class="wrap">
+  <p class="eyebrow">one release, five drafts</p>
+  <h2>every channel gets its own post, under its own limit.</h2>
+  <p class="intro">the site uses templates built from your commit messages, so it needs no API key. the CLI can also take an OpenAI or Anthropic key: the model writes the drafts, then every draft gets checked against its channel's limit.</p>
+  <div class="channels">
+    <div class="card chan"><b>X post</b><small>plain text, no hashtags</small><span class="n">280</span><small>characters</small></div>
+    <div class="card chan"><b>X thread</b><small>3 to 6 numbered posts</small><span class="n">280</span><small>per post</small></div>
+    <div class="card chan"><b>Discord</b><small>Markdown, no pings</small><span class="n">2000</span><small>characters</small></div>
+    <div class="card chan"><b>Telegram</b><small>HTML, escaped</small><span class="n">4096</span><small>characters</small></div>
+    <div class="card chan"><b>LinkedIn</b><small>short paragraphs</small><span class="n">3000</span><small>characters</small></div>
+  </div>
+</div></section>
+
+<section id="features" style="padding-top:0"><div class="wrap">
+  <p class="eyebrow">what it does</p>
+  <h2>one command per release.</h2>
+  <p class="intro">reads the GitHub API or your local checkout, drops the noise, ranks what matters and writes it all down.</p>
+  <div class="features">
+    <div class="card feat"><code>notes</code><h3>Release notes</h3><p>Conventional Commits grouped into sections. Merges, dependency bumps, typo fixes and duplicates get dropped.</p></div>
+    <div class="card feat"><code>shill next</code><h3>Next version</h3><p>Breaking is major, feat is minor, the rest is patch. Prints the commits that decided it.</p></div>
+    <div class="card feat"><code>changelog --write</code><h3>CHANGELOG.md</h3><p>Adds a Keep a Changelog section at the top. Run it twice and the file stays the same.</p></div>
+    <div class="card feat"><code>highlights</code><h3>Top 3 first</h3><p>Commits scored by type, PR link and files changed. The top three lead every post. First-time contributors get named.</p></div>
+    <div class="card feat"><code>--voice voice.md</code><h3>Sounds like you</h3><p>Point it at a few of your old posts and the model copies how you write.</p></div>
+    <div class="card feat"><code>watch</code><h3>Watch mode</h3><p>Polls releases and tags every 5 minutes and posts each new release once. State lives in a JSON file.</p></div>
+    <div class="card feat"><code>--local</code><h3>No API needed</h3><p>Reads your checkout with git log. Private repos and repos outside GitHub work too.</p></div>
+    <div class="card feat"><code>ui</code><h3>Dashboard</h3><p>Every draft previewed the way it will look, with a character ring and a copy button. Runs on 127.0.0.1, never posts.</p></div>
+    <div class="card feat"><code>--post discord</code><h3>Opt-in posting</h3><p>Discord and Telegram only go out when you pass a webhook or bot token. X is always drafts only.</p></div>
+  </div>
+</div></section>
+
+<section style="padding-top:0"><div class="wrap split">
+  <div>
+    <p class="eyebrow">in the terminal</p>
+    <h2>the next version, and why.</h2>
+    <ol class="steps">
+      <li><div><b>Read</b><span>commits since your last tag, from the API or git log.</span></div></li>
+      <li><div><b>Filter and rank</b><span>12 commits in, 7 kept, top 3 picked for the posts.</span></div></li>
+      <li><div><b>Write</b><span>notes, changelog entry and a draft per channel, each checked against its limit.</span></div></li>
+    </ol>
+    <div class="install" style="margin-top:32px"><code><i>$</i> npx shill --local</code><button class="btn primary sm" data-copy="npx shill --local">Copy</button></div>
+    <div class="sub-cta"><a href="https://github.com/OWNER/shill#quick-start">Quick start</a><a href="https://github.com/OWNER/shill#cli-reference">CLI reference</a><span>MIT, Node 18+</span></div>
+  </div>
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i><span>example data</span></div>
+<pre><span class="p">$</span> <span class="k">shill next acme/rocket</span>
+<span class="v">v2.0.0</span>
+
+<span class="m">Current:</span> v1.0.0
+<span class="m">Bump:</span>    major
+<span class="m">Range:</span>   since v1.0.0 (7 of 12 commits kept)
+
+<span class="m">Why:</span>
+- 1 breaking change: "drop support for config.yml".
+
+<span class="p">$</span> <span class="k">shill acme/rocket --since v1.0.0 --channels thread</span>
+1/6 rocket v2.0.0 is out.
+<span class="m">[111/280]</span>
+2/6 Breaking: drop support for config.yml. Migration:
+use rocket.config.json instead.
+<span class="m">[85/280]</span>
+<span class="m">...</span></pre>
+  </div>
+</div></section>
+
+<section id="action" style="padding-top:0"><div class="wrap split">
+  <div>
+    <p class="eyebrow">github action</p>
+    <h2>runs on every release.</h2>
+    <p class="intro" style="margin-bottom:0">add the Action and publish a release. shill writes the notes into the release body between two markers (anything you wrote stays), drafts every post and puts them in the job summary.</p>
+  </div>
+<pre class="code"><span class="c"># .github/workflows/release.yml</span>
+on:
+  release:
+    types: [published]
+permissions:
+  contents: write
+jobs:
+  shill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: <span class="s">OWNER/shill@v1</span>
+        with:
+          channels: x,thread,discord
+          post: discord
+          discord_webhook: ${{ secrets.DISCORD_WEBHOOK }}</pre>
+</div></section>
+
+<section id="mcp" style="padding-top:0"><div class="wrap">
+  <p class="eyebrow">model context protocol</p>
+  <h2>let your agent shill it.</h2>
+  <p class="intro">shill speaks MCP over stdio. add it to Claude Desktop, Claude Code or Cursor, then ask for the next version or a launch thread.</p>
+  <div class="split" style="align-items:start">
+<pre class="code">{
+  "mcpServers": {
+    "shill": {
+      "command": "npx",
+      "args": [<span class="s">"-y"</span>, <span class="s">"shill"</span>, <span class="s">"mcp"</span>]
+    }
+  }
+}</pre>
+    <div class="tools" style="margin-top:0">
+      <div class="card tool"><code>release_notes</code><p>Markdown notes for a range, with highlights and contributors.</p></div>
+      <div class="card tool"><code>next_version</code><p>The next semver and the commits that decided it.</p></div>
+      <div class="card tool"><code>draft_posts</code><p>X, thread, Discord, Telegram and LinkedIn drafts with counts. Never posts.</p></div>
+      <div class="card tool"><code>changelog_entry</code><p>A Keep a Changelog section, optionally written into CHANGELOG.md.</p></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="faq" style="padding-top:0"><div class="wrap">
+  <p class="eyebrow">faq</p>
+  <h2>questions people ask.</h2>
+  <div class="faq">
+    <details open><summary>Do I need an AI key?</summary><p>No. Without a key shill fills templates from your Conventional Commits. With OPENAI_API_KEY or ANTHROPIC_API_KEY the model writes the prose, and any draft that breaks a channel rule falls back to the template with a warning.</p></details>
+    <details><summary>What gets sent to the model?</summary><p>Commit subjects, scopes, PR numbers, author handles and the version. Never code or diffs.</p></details>
+    <details><summary>Will it post to X?</summary><p>No. X drafts go to files, the dashboard and the job summary. Discord and Telegram only post with explicit flags.</p></details>
+    <details><summary>My commits are not Conventional Commits.</summary><p>They still show up, under Other Changes, and count as a patch bump. Conventional Commits give you better notes.</p></details>
+    <details><summary>Does it have dependencies?</summary><p>Zero runtime dependencies. Node 18 or newer, plus git for local mode.</p></details>
+    <details><summary>Is $SHILL part of the tool?</summary><p>No. The CLI, Action and MCP server are MIT licensed and work without any token. Nothing here is financial advice.</p></details>
+  </div>
+</div></section>
+
+<div class="wrap">
+  <div class="final">
+    <img src="data:image/webp;base64,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" alt="">
+    <h2>ship it, then shill it.</h2>
+    <div class="install" style="margin:0 auto"><code><i>$</i> npm install -g shill</code><button class="btn primary sm" data-copy="npm install -g shill">Copy</button></div>
+  </div>
+  <footer><span>shill, MIT licensed. token: $SHILL. not financial advice.</span><a href="https://github.com/OWNER/shill">github.com/OWNER/shill</a></footer>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

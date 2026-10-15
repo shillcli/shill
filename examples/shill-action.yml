@@ -1,0 +1,43 @@
+# Copy to .github/workflows/shill.yml in your repository.
+#
+# When you publish a GitHub release, shill writes notes for the commits since the
+# previous semver tag into the release body (between shill markers, so your own
+# text stays), drafts posts for every channel, adds them to the job summary and
+# uploads them as an artifact.
+#
+# Secrets (all optional):
+#   OPENAI_API_KEY or ANTHROPIC_API_KEY  AI drafts. Without them shill uses templates.
+#   DISCORD_WEBHOOK                      Needed only if you add discord to `post`.
+#   TELEGRAM_TOKEN, TELEGRAM_CHAT        Needed only if you add telegram to `post`.
+
+name: shill
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  shill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: shill
+        uses: OWNER/shill@v1
+        with:
+          channels: x,thread,discord,telegram,linkedin
+          tone: plain
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          # voice: .github/voice.md
+          # Publishing is opt-in. X is always drafts only.
+          # post: discord,telegram
+          # discord_webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          # telegram_token: ${{ secrets.TELEGRAM_TOKEN }}
+          # telegram_chat: ${{ secrets.TELEGRAM_CHAT }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shill-drafts
+          path: ${{ steps.shill.outputs.drafts_dir }}

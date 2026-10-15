@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shill dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="21.05 18.265 64 64"%3E%3Ctitle%3Eshill%3C/title%3E%3Cpath fill="%23FF2E8B" d="M24 40.5Q24 37 27.5 37H35V57H27.5Q24 57 24 53.5ZM37 37L58.5 26.2Q63 24 63 29V65Q63 70 58.5 67.8L37 57ZM39.5 58.5L46.5 60.5L50.2 72Q51 75 48 75H45.5Q43 75 42.3 72.6Z"/%3E%3Cpath d="M69 39.5Q73.5 47 69 54.5" fill="none" stroke="%23FF2E8B" stroke-width="5.2" stroke-linecap="round"/%3E%3Cpath d="M75.5 33Q83.5 47 75.5 61" fill="none" stroke="%23FF2E8B" stroke-width="5.2" stroke-linecap="round"/%3E%3C/svg%3E">
+<style>
+@font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/plus-jakarta-sans-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/plus-jakarta-sans-latin-700-normal.woff2) format("woff2"); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/plus-jakarta-sans-latin-800-normal.woff2) format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url(/fonts/space-mono-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url(/fonts/space-mono-latin-700-normal.woff2) format("woff2"); font-weight: 700; font-display: swap; }
+:root {
+  --bg: #FFF5F8; --card: #FFFFFF; --raised: #FFEAF1; --line: #F6D9E3; --text: #2A1420; --muted: #8E6C7B;
+  --accent: #FF2E8B; --on-accent: #FFFFFF; --accent-ring: rgba(255,46,139,.30); --accent-tint: rgba(255,46,139,.12); --second: #7C5CFF; --second-tint: rgba(124,92,255,.12);
+  --shadow: 0 8px 24px rgba(255,46,139,.10); --shadow-sm: 0 2px 8px rgba(255,46,139,.10);
+  --sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r-card: 20px; --r-in: 12px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 500 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 2px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* top bar */
+.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.top .in { max-width: 1520px; margin: 0 auto; height: 64px; padding: 0 32px; display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 22px; letter-spacing: -.03em; }
+.brand img { width: 32px; height: 32px; display: block; border-radius: 8px; }
+.ver { font: 400 12px var(--mono); color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.sp { flex: 1; }
+.status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); box-shadow: inset 0 0 0 1px var(--muted); }
+.status.on i { background: var(--second); box-shadow: 0 0 0 3px var(--second-tint); }
+
+/* layout */
+.wrap { max-width: 1520px; margin: 0 auto; padding: 32px; display: grid; grid-template-columns: 320px minmax(0, 1fr) 320px; gap: 32px; align-items: start; }
+.col { display: grid; gap: 24px; min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--shadow); }
+.eyebrow { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin: 0; }
+
+/* composer */
+.composer { position: sticky; top: 96px; padding: 24px; display: grid; gap: 12px; }
+.composer h2 + .sub { margin: -4px 0 4px; }
+.composer h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.03em; }
+.composer .sub { margin: -8px 0 0; color: var(--muted); font-size: 13px; }
+label.f { display: grid; gap: 8px; font-size: 13px; font-weight: 700; }
+.f input, .f select { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-in); padding: 10px 12px; font-size: 14px; font-weight: 500; outline: none; transition: border-color .15s, box-shadow .15s; }
+.f input:hover { border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.f input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-tint); }
+.f input::placeholder { color: color-mix(in srgb, var(--muted) 65%, white); }
+.f input:user-invalid { border-color: var(--accent); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.seg { display: flex; background: var(--raised); border-radius: 999px; padding: 4px; gap: 4px; }
+.seg button { flex: 1; white-space: nowrap; border: 0; background: none; border-radius: 999px; padding: 8px 12px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; transition: background .15s, color .15s; }
+.seg button:hover { color: var(--text); }
+.seg button.on { background: var(--card); color: var(--text); box-shadow: var(--shadow-sm); }
+.toggles { display: grid; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.tg { display: flex; align-items: center; gap: 12px; padding: 8px 12px; cursor: pointer; border-top: 1px solid var(--line); font-size: 14px; font-weight: 700; }
+.tg:first-child { border-top: 0; }
+.tg:hover { background: var(--raised); }
+.tg .lim { margin-left: auto; font: 400 12px var(--mono); color: var(--muted); }
+.tg input { position: absolute; opacity: 0; pointer-events: none; }
+.sw { width: 32px; height: 20px; border-radius: 999px; background: var(--line); position: relative; flex: none; transition: background .15s; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.15); transition: transform .15s; }
+.tg input:checked + .sw { background: var(--text); }
+.tg input:checked + .sw::after { transform: translateX(12px); }
+.tg input:focus-visible + .sw { outline: 3px solid var(--accent-ring); outline-offset: 2px; }
+.go { border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); padding: 14px 20px; font-size: 15px; font-weight: 800; letter-spacing: -.01em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px var(--accent-tint); transition: transform .15s, box-shadow .15s, filter .15s; }
+.go:hover { transform: translateY(-1px); box-shadow: 0 12px 28px var(--accent-ring); }
+.go:active { transform: none; }
+.go[disabled] { cursor: progress; filter: saturate(.6); transform: none; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--on-accent) 35%, transparent); border-top-color: var(--on-accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hint { margin: 0; color: var(--muted); font-size: 12px; text-align: center; }
+
+/* feed */
+.feedhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.feedhead h1 { margin: 4px 0 0; font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; }
+.feedhead h1 .num { font-size: 24px; letter-spacing: -.02em; }
+.feedhead .seg { background: var(--card); border: 1px solid var(--line); }
+.feedhead .seg button.on { background: var(--raised); box-shadow: none; }
+.previews { columns: 2 300px; column-gap: 24px; }
+.pv { break-inside: avoid; margin: 0 0 24px; padding: 0; overflow: hidden; }
+.pv > header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--raised) 45%, white); }
+.pv > header b { font-size: 13px; }
+.pv > header .lim { font: 400 12px var(--mono); color: var(--muted); }
+.pv > header .sp { flex: 1; }
+.pv .body { padding: 16px; }
+.ring { display: inline-flex; align-items: center; gap: 8px; font: 400 12px var(--mono); color: var(--muted); }
+.ring svg { width: 20px; height: 20px; transform: rotate(-90deg); }
+.ring .t { stroke: var(--line); } .ring .p { stroke: var(--text); }
+.ring.hot .p { stroke: var(--accent); }
+.ghost { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; }
+.ghost:hover { background: var(--raised); border-color: color-mix(in srgb, var(--accent) 25%, var(--line)); }
+.ghost.done { background: var(--text); color: #fff; border-color: var(--text); }
+.who { display: flex; gap: 12px; }
+.av { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--raised); color: var(--text); font-weight: 800; font-size: 16px; letter-spacing: -.02em; }
+.av.sq { border-radius: 12px; }
+.av.sm { width: 32px; height: 32px; font-size: 13px; }
+.nm { font-weight: 800; font-size: 14px; letter-spacing: -.01em; }
+.hd { color: var(--muted); font-weight: 500; }
+.txt { white-space: pre-wrap; word-break: break-word; font-size: 14.5px; line-height: 1.5; margin-top: 4px; }
+.txt a, .rich a { color: var(--second); text-decoration: none; }
+.txt a:hover, .rich a:hover { text-decoration: underline; }
+.tw + .tw { margin-top: 0; }
+.tw { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 12px; position: relative; padding-bottom: 16px; }
+.tw:not(:last-child)::before { content: ""; position: absolute; left: 19px; top: 44px; bottom: 0; width: 2px; background: var(--line); border-radius: 2px; }
+.tw .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.dc { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 16px; }
+.tag { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .04em; background: var(--second); color: #fff; border-radius: 4px; padding: 0 4px; margin-left: 4px; vertical-align: 2px; }
+.rich { font-size: 14px; line-height: 1.5; word-break: break-word; }
+.rich h2 { font-size: 18px; margin: 4px 0 4px; font-weight: 800; letter-spacing: -.02em; }
+.rich p { margin: 0 0 4px; }
+.rich ul { margin: 0 0 8px; padding-left: 20px; }
+.rich li { margin: 2px 0; }
+.tgwrap { background: var(--raised); border-radius: 16px; padding: 16px; }
+.bubble { --fade: #fff; background: var(--card); border-radius: 16px 16px 16px 4px; padding: 12px 16px 8px; box-shadow: var(--shadow-sm); }
+.bubble .nm { color: var(--second); font-size: 13px; margin-bottom: 4px; }
+.bubble .meta { text-align: right; font: 400 11px var(--mono); color: var(--muted); }
+.li .who { margin-bottom: 12px; }
+.li .sub2 { font-size: 12px; color: var(--muted); }
+.clamp { max-height: 320px; overflow: hidden; position: relative; }
+.clamp::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 72px; background: linear-gradient(transparent, var(--fade, #fff)); pointer-events: none; }
+.open .clamp { max-height: none; } .open .clamp::after { display: none; }
+.more { margin-top: 8px; border: 0; background: none; padding: 0; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.more:hover { text-decoration-color: var(--text); }
+.pv .foot2 { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); }
+.doc { padding: 32px; }
+.doc .bar2 { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 24px; }
+.doc .rich h2 { font-size: 22px; margin-bottom: 16px; }
+.doc .rich h3 { font-size: 15px; margin: 24px 0 8px; font-weight: 800; }
+.doc code, .rich code { font: 400 12.5px var(--mono); background: var(--raised); border-radius: 6px; padding: 1px 6px; }
+.doc .rich a { color: var(--text); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.raw { margin: 0; white-space: pre-wrap; word-break: break-word; font: 400 12.5px/1.7 var(--mono); color: var(--text); background: var(--raised); border-radius: 16px; padding: 24px; }
+
+/* rail */
+.vcard { padding: 24px; display: grid; gap: 16px; }
+.big { font: 700 44px/1 var(--mono); letter-spacing: -.04em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.from { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 10px; background: var(--raised); color: var(--text); }
+.pill.v { background: var(--second-tint); color: var(--second); }
+.why { margin: 0; padding: 12px 16px; background: var(--raised); border-radius: 12px; font-size: 13px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); padding-top: 16px; }
+.stats div { display: grid; gap: 4px; }
+.stats b { font: 700 20px var(--mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stats span { font-size: 12px; color: var(--muted); }
+.list { padding: 24px; display: grid; gap: 4px; }
+.list .eyebrow { margin-bottom: 8px; }
+.hl { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.hl:nth-child(2) { border-top: 0; }
+.hl .rk { font: 700 13px var(--mono); color: var(--muted); padding-top: 1px; }
+.hl .s { font-weight: 700; font-size: 13.5px; line-height: 1.4; }
+.hl .m { display: flex; align-items: center; gap: 8px; margin-top: 8px; font: 400 11.5px var(--mono); color: var(--muted); }
+.meter { flex: 1; height: 6px; border-radius: 99px; background: var(--raised); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 99px; background: color-mix(in srgb, var(--accent) 45%, white); }
+.ppl { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.ppl .n { font-weight: 700; font-size: 14px; }
+.ppl .c { margin-left: auto; font: 400 12px var(--mono); color: var(--muted); }
+
+/* states */
+.empty { padding: 48px 32px; text-align: center; display: grid; justify-items: center; gap: 12px; }
+.empty img { width: 88px; height: 88px; border-radius: 22px; box-shadow: var(--shadow); }
+.empty h2 { margin: 12px 0 0; font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+.empty p { margin: 0; color: var(--muted); max-width: 420px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 24px; width: 100%; max-width: 560px; text-align: left; }
+.steps div { background: var(--raised); border-radius: 16px; padding: 16px; font-size: 13px; }
+.steps b { display: block; font: 700 12px var(--mono); color: var(--muted); margin-bottom: 4px; }
+.sk { background: linear-gradient(90deg, var(--raised) 0%, color-mix(in srgb, var(--raised) 40%, white) 50%, var(--raised) 100%); background-size: 200% 100%; animation: sh 1.2s ease-in-out infinite; border-radius: 8px; }
+@keyframes sh { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.skc { padding: 16px; display: grid; gap: 12px; }
+.err { padding: 24px; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px; border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.err .x { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-tint); color: var(--accent); display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+.err h3 { margin: 0 0 4px; font-size: 16px; font-weight: 800; }
+.err p { margin: 0 0 12px; color: var(--muted); word-break: break-word; }
+.warns { padding: 12px 16px; font-size: 13px; border-radius: 16px; background: var(--second-tint); color: var(--text); border: 0; box-shadow: none; }
+.muted { color: var(--muted); }
+
+@media (min-width: 1281px) { .wrap:has(.rail[hidden]) .feed { grid-column: 2 / -1; } }
+@media (max-width: 1280px) { .wrap { grid-template-columns: 300px minmax(0, 1fr); } .rail { grid-column: 2; grid-row: 1; } .feed { grid-column: 2; } .composer { grid-row: 1 / span 2; } }
+@media (max-width: 900px) {
+  .top .in { padding: 0 16px; height: 56px; } .status .lbl { display: none; }
+  .wrap { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 16px; }
+  .rail, .feed, .composer { grid-column: auto; grid-row: auto; }
+  .rail { order: 1; } .feed { order: 2; }
+  .composer { position: static; padding: 16px; }
+  .previews { columns: 1; }
+  .feedhead h1 { font-size: 22px; }
+  .doc { padding: 16px; }
+  .steps { grid-template-columns: 1fr; }
+  .empty { padding: 32px 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="top"><div class="in">
+  <div class="brand"><img src="data:image/webp;base64,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" alt="">shill</div>
+  <span class="ver num" id="ver">v</span>
+  <span class="sp"></span>
+  <span class="status" id="ai"><i></i><span class="lbl" id="ailbl">checking</span></span>
+</div></div>
+
+<div class="wrap">
+  <form class="card composer" id="f" autocomplete="off" novalidate>
+    <h2>New release</h2>
+    <p class="sub">Pick the commits. shill writes the rest.</p>
+    <div class="seg" role="group" aria-label="Commit source">
+      <button type="button" class="on" data-src="github">GitHub</button>
+      <button type="button" data-src="local">Local git</button>
+    </div>
+    <label class="f" id="repoL">Repository<input type="text" name="repo" placeholder="owner/repo" required></label>
+    <label class="f" id="dirL" hidden>Checkout path<input type="text" name="dir" placeholder="/path/to/repo"></label>
+    <div class="row2">
+      <label class="f">Since<input type="text" name="since" placeholder="latest" value="latest"></label>
+      <label class="f">Until<input type="text" name="until" placeholder="HEAD"></label>
+    </div>
+    <label class="f">Announce as<input type="text" name="tag" placeholder="next version"></label>
+    <div class="f" style="display:grid;gap:8px;font-size:13px;font-weight:700">Tone
+      <div class="seg" id="tone" role="group" aria-label="Tone"><button type="button" class="on" data-tone="plain">plain</button><button type="button" data-tone="hype">hype</button><button type="button" data-tone="technical">technical</button></div>
+    </div>
+    <div style="display:grid;gap:8px;font-size:13px;font-weight:700">Channels<div class="toggles" id="chips"></div></div>
+    <button class="go" id="go" type="submit">Write the drafts</button>
+    <p class="hint">Drafts only. Nothing gets posted from here.</p>
+  </form>
+
+  <main class="col feed" id="feed">
+    <div class="card empty">
+      <img src="data:image/webp;base64,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" alt="">
+      <h2>commits in, posts out.</h2>
+      <p>Point shill at a repo and a range. You get the next version, the release notes and a draft for every channel, previewed the way people will see them.</p>
+      <div class="steps"><div><b>01</b>Pick a repo or a local checkout</div><div><b>02</b>Choose a range, like <code>latest</code></div><div><b>03</b>Copy the drafts you like</div></div>
+    </div>
+  </main>
+
+  <aside class="col rail" id="rail" hidden></aside>
+</div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const len = (s) => [...String(s)].length;
+let source = 'github', tone = 'plain', meta = { channels: {} }, last = null, view = 'posts';
+
+const linkify = (h) => h.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/(^|[\s(])@([\w-]+)/g, '$1<a href="https://github.com/$2" target="_blank" rel="noopener">@$2</a>');
+function inline(s) {
+  return esc(s)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\(&lt;(https?:[^)\s]+?)&gt;\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/&lt;(https?:[^\s&]+)&gt;/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+}
+function markdown(md) {
+  const out = []; let list = false;
+  for (const line of String(md).split('\n')) {
+    const h = /^(#{2,3}) (.*)/.exec(line), li = /^- (.*)/.exec(line), sub = /^  - (.*)/.exec(line);
+    if (!li && !sub && list) { out.push('</ul>'); list = false; }
+    if (h) out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`);
+    else if (li || sub) { if (!list) { out.push('<ul>'); list = true; } out.push(`<li${sub ? ' class="muted" style="list-style:circle;margin-left:16px"' : ''}>${inline((li || sub)[1])}</li>`); }
+    else if (line.trim()) out.push(`<p>${inline(line)}</p>`);
+  }
+  if (list) out.push('</ul>');
+  return out.join('');
+}
+// Telegram HTML: escape everything, then allow b, i, code and http(s) links back in.
+function tgHtml(s) {
+  return esc(s).replace(/&lt;(\/?)(b|i|u|s|code)&gt;/g, '<$1$2>')
+    .replace(/&lt;a href=&quot;(https?:[^&"]+)&quot;&gt;/g, '<a href="$1" target="_blank" rel="noopener">').replace(/&lt;\/a&gt;/g, '</a>')
+    .replace(/&amp;(lt|gt|amp|quot);/g, '&$1;').replace(/\n/g, '<br>');
+}
+function ring(n, limit) {
+  const r = 8, c = 2 * Math.PI * r, pct = Math.min(1, n / limit);
+  return `<span class="ring${pct > .9 ? ' hot' : ''}" title="${n} of ${limit} characters"><svg viewBox="0 0 20 20" aria-hidden="true"><circle class="t" cx="10" cy="10" r="${r}" fill="none" stroke-width="2.5"/><circle class="p" cx="10" cy="10" r="${r}" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${(c * pct).toFixed(2)} ${c.toFixed(2)}"/></svg>${n}/${limit}</span>`;
+}
+const copyBtn = (text, label = 'Copy') => `<button type="button" class="ghost" data-copy="${esc(text)}" data-label="${label}">${label}</button>`;
+const initials = (s) => String(s || '?').replace(/^@/, '').slice(0, 1).toUpperCase();
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-copy]');
+  if (b) {
+    try { await navigator.clipboard.writeText(b.dataset.copy); } catch { const t = document.createElement('textarea'); t.value = b.dataset.copy; document.body.append(t); t.select(); document.execCommand('copy'); t.remove(); }
+    b.textContent = 'Copied'; b.classList.add('done'); setTimeout(() => { b.textContent = b.dataset.label; b.classList.remove('done'); }, 1400);
+  }
+  const m = e.target.closest('[data-more]'); if (m) { const pv = m.closest('.pv'); pv.classList.toggle('open'); m.textContent = pv.classList.contains('open') ? 'Show less' : 'Show full post'; }
+  const s = e.target.closest('[data-src]'); if (s) setSource(s.dataset.src);
+  const t = e.target.closest('[data-tone]'); if (t) { tone = t.dataset.tone; document.querySelectorAll('[data-tone]').forEach((x) => x.classList.toggle('on', x === t)); }
+  const v = e.target.closest('[data-view]'); if (v && last) { view = v.dataset.view; renderFeed(last); }
+});
+
+function setSource(s) {
+  source = s;
+  document.querySelectorAll('[data-src]').forEach((b) => b.classList.toggle('on', b.dataset.src === s));
+  $('#repoL').hidden = s === 'local'; $('#dirL').hidden = s !== 'local';
+  $('[name=repo]').required = s !== 'local';
+}
+
+function header(label, n, limit, extra = '') {
+  return `<header><b>${esc(label)}</b>${extra}<span class="sp"></span>${limit ? ring(n, limit) : ''}</header>`;
+}
+function preview(c, val, r) {
+  const spec = meta.channels[c] || { label: c, limit: 0 };
+  const name = r.repo.split('/').pop(), owner = r.repo.split('/')[0];
+  if (c === 'x') return `<article class="card pv">${header(spec.label, len(val), spec.limit)}<div class="body"><div class="tw"><div class="av">${initials(name)}</div><div><span class="nm">${esc(name)}</span> <span class="hd">@${esc(owner)} · now</span><div class="txt">${linkify(esc(val))}</div></div></div></div><div class="foot2"><span class="muted" style="font-size:12px">Links count as 23 on X</span>${copyBtn(val)}</div></article>`;
+  if (c === 'thread') return `<article class="card pv">${header(spec.label, 0, 0, ` <span class="pill">${val.length} posts</span>`)}<div class="body">${val.map((p) => `<div class="tw"><div class="av">${initials(name)}</div><div><span class="nm">${esc(name)}</span> <span class="hd">@${esc(owner)}</span><div class="txt">${linkify(esc(p))}</div><div class="foot">${ring(len(p), spec.limit)}${copyBtn(p)}</div></div></div>`).join('')}</div><div class="foot2"><span class="muted" style="font-size:12px">${val.length} posts, each under ${spec.limit}</span>${copyBtn(val.join('\n\n'), 'Copy thread')}</div></article>`;
+  if (c === 'discord') return `<article class="card pv">${header(spec.label, len(val), spec.limit)}<div class="body"><div class="dc"><div class="av">${initials(name)}</div><div><span class="nm">${esc(name)} releases</span><span class="tag">APP</span> <span class="hd" style="font-size:12px">Today at 14:02</span><div class="clamp"><div class="rich">${markdown(val)}</div></div><button type="button" class="more" data-more>Show full post</button></div></div></div><div class="foot2"><span class="muted" style="font-size:12px">Mentions are not pinged</span>${copyBtn(val)}</div></article>`;
+  if (c === 'telegram') return `<article class="card pv">${header(spec.label, len(val), spec.limit)}<div class="body"><div class="tgwrap"><div class="bubble"><div class="nm">${esc(name)} updates</div><div class="clamp"><div class="rich">${tgHtml(val)}</div></div><div class="meta">14:02</div></div><button type="button" class="more" data-more>Show full post</button><div></div></div></div><div class="foot2"><span class="muted" style="font-size:12px">HTML parse mode, escaped</span>${copyBtn(val)}</div></article>`;
+  if (c === 'linkedin') return `<article class="card pv li">${header(spec.label, len(val), spec.limit)}<div class="body"><div class="who"><div class="av sq">${initials(name)}</div><div><div class="nm">${esc(name)}</div><div class="sub2">Open source project · now</div></div></div><div class="txt">${linkify(esc(val))}</div></div><div class="foot2"><span class="muted" style="font-size:12px">Short paragraphs, no hashtags</span>${copyBtn(val)}</div></article>`;
+  return `<article class="card pv">${header(spec.label, len(val), spec.limit)}<div class="body"><div class="txt">${esc(val)}</div></div><div class="foot2"><span></span>${copyBtn(val)}</div></article>`;
+}
+
+function renderFeed(r) {
+  const v = r.version;
+  const ann = r.tag || (v && v.next) || '';
+  const tabs = `<div class="seg" role="tablist"><button type="button" data-view="posts" class="${view === 'posts' ? 'on' : ''}">Posts</button><button type="button" data-view="notes" class="${view === 'notes' ? 'on' : ''}">Release notes</button><button type="button" data-view="raw" class="${view === 'raw' ? 'on' : ''}">Markdown</button></div>`;
+  const order = ['x', 'discord', 'thread', 'telegram', 'linkedin'];
+  const posts = Object.entries(r.posts).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
+  let body;
+  if (view === 'posts') body = posts.length ? `<div class="previews">${posts.map(([c, val]) => preview(c, val, r)).join('')}</div>` : '<div class="card empty"><h2>No channels picked</h2><p>Switch on at least one channel on the left.</p></div>';
+  else if (view === 'notes') body = `<div class="card doc"><div class="bar2"><p class="eyebrow">Release notes</p>${copyBtn(r.markdown, 'Copy Markdown')}</div><div class="rich">${markdown(r.markdown)}</div></div>`;
+  else body = `<div class="card doc"><div class="bar2"><p class="eyebrow">Markdown</p>${copyBtn(r.markdown, 'Copy Markdown')}</div><pre class="raw">${esc(r.markdown)}</pre></div>`;
+  $('#feed').innerHTML = `
+    ${r.warnings.length ? `<div class="card warns">${r.warnings.map(esc).join('<br>')}</div>` : ''}
+    <div class="feedhead"><div><p class="eyebrow">${esc(r.range)} · ${r.provider === 'none' ? 'templates' : esc(r.provider)}</p><h1>${esc(r.repo)} <span class="num">${esc(ann)}</span></h1></div>${tabs}</div>
+    ${body}`;
+}
+
+function renderRail(r) {
+  const v = r.version;
+  const first = r.contributors.filter((c) => c.firstTime);
+  const max = Math.max(1, ...r.highlights.map((h) => h.score));
+  $('#rail').hidden = false;
+  $('#rail').innerHTML = `
+    <div class="card vcard">
+      <p class="eyebrow">Next version</p>
+      <div class="big">${esc(v ? v.next : r.tag || 'n/a')}</div>
+      <div class="from">${v ? `${v.bump ? `<span class="pill">${esc(v.bump)}</span>` : ''}<span>from <span class="num">${esc(v.current || '0.0.0')}</span></span>` : 'Set Since to a tag to get a suggestion.'}</div>
+      ${v && v.reasons.length ? `<p class="why">${v.reasons.map(esc).join('<br>')}</p>` : ''}
+      <div class="stats"><div><b>${r.stats.kept}<span class="muted" style="font-size:13px">/${r.stats.seen}</span></b><span>commits kept</span></div><div><b>${r.contributors.length}</b><span>people</span></div><div><b>${first.length}</b><span>first-time</span></div></div>
+    </div>
+    <div class="card list"><p class="eyebrow">Highlights</p>
+      ${r.highlights.map((h, i) => `<div class="hl"><span class="rk">${String(i + 1).padStart(2, '0')}</span><div><div class="s">${esc(h.subject)}</div><div class="m"><span>${esc(h.type)}${h.scope ? `/${esc(h.scope)}` : ''}</span><span class="meter"><i style="width:${Math.round((h.score / max) * 100)}%"></i></span><span>${h.pr ? `#${esc(h.pr)}` : esc(h.sha)}</span></div></div></div>`).join('') || '<p class="muted">No highlights in this range.</p>'}
+    </div>
+    <div class="card list"><p class="eyebrow">Contributors</p>
+      ${r.contributors.map((c) => `<div class="ppl"><div class="av sm">${initials(c.login || c.name)}</div><span class="n">${esc(c.login ? '@' + c.login : c.name)}</span>${c.firstTime ? '<span class="pill v">first commit</span>' : ''}<span class="c">${c.commits}</span></div>`).join('') || '<p class="muted">No contributors found.</p>'}
+    </div>`;
+}
+
+function loading() {
+  const sk = (h) => `<div class="card pv"><div class="skc"><div style="display:flex;gap:12px;align-items:center"><div class="sk" style="width:40px;height:40px;border-radius:50%"></div><div class="sk" style="width:40%;height:14px"></div></div>${h.map((w) => `<div class="sk" style="width:${w}%;height:12px"></div>`).join('')}</div></div>`;
+  $('#feed').innerHTML = `<div class="feedhead"><div><p class="eyebrow">Reading commits</p><div class="sk" style="width:260px;height:28px;margin-top:8px"></div></div></div><div class="previews">${sk([92, 80, 64])}${sk([96, 88, 90, 70, 40])}${sk([85, 60])}${sk([90, 75, 50])}</div>`;
+}
+function failed(msg) {
+  $('#feed').innerHTML = `<div class="card err"><div class="x">!</div><div><h3>Could not read that range</h3><p>${esc(msg)}</p><button type="button" class="ghost" id="retry">Try again</button></div></div>`;
+  $('#retry').onclick = () => $('#f').requestSubmit();
+}
+
+$('#f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(['repo', 'dir', 'since', 'until', 'tag'].map((k) => [k, (fd.get(k) || '').trim()]));
+  body.tone = tone; body.local = source === 'local'; body.channels = fd.getAll('ch');
+  if (!body.local && !body.repo) { $('[name=repo]').focus(); return failed('Add a repository as owner/repo, or switch to Local git.'); }
+  const go = $('#go'); go.disabled = true; go.innerHTML = '<span class="spin"></span>Reading commits';
+  loading();
+  try {
+    const res = await fetch('/api/generate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    last = data; view = 'posts'; renderFeed(data); renderRail(data);
+    history.replaceState(null, '', `?${new URLSearchParams({ src: source, repo: body.repo, dir: body.dir, since: body.since })}`);
+  } catch (err) { failed(err.message); }
+  finally { go.disabled = false; go.textContent = 'Write the drafts'; }
+});
+
+(async () => {
+  try { meta = await (await fetch('/api/meta')).json(); } catch {}
+  $('#ver').textContent = 'v' + (meta.version || '');
+  const on = meta.ai && meta.ai !== 'none';
+  $('#ai').classList.toggle('on', !!on);
+  $('#ailbl').textContent = on ? `AI drafts: ${meta.ai}` : 'Templates, no AI key';
+  $('#chips').innerHTML = Object.entries(meta.channels).map(([k, v]) => `<label class="tg"><input type="checkbox" name="ch" value="${k}" checked><span class="sw"></span>${esc(v.label)}<span class="lim">${v.limit}</span></label>`).join('');
+  $('[name=dir]').placeholder = meta.cwd || '/path/to/repo';
+  const q = new URLSearchParams(location.search);
+  if (q.get('src') === 'local') setSource('local');
+  for (const k of ['repo', 'dir', 'since']) if (q.get(k)) $(`[name=${k}]`).value = q.get(k);
+  if (q.get('run') === '1') $('#f').requestSubmit();
+})();
+</script>
+</body>
+</html>

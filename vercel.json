@@ -1,0 +1,14 @@
+{
+  "framework": null,
+  "installCommand": "echo skip",
+  "buildCommand": "echo skip",
+  "outputDirectory": "docs",
+  "functions": {
+    "api/github.js": {
+      "maxDuration": 20
+    }
+  },
+  "github": {
+    "silent": true
+  }
+}

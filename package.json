@@ -1,0 +1,56 @@
+{
+  "name": "shill",
+  "version": "1.1.0",
+  "description": "Your repo's shill. Commits in, posts out. Release notes, next semver, CHANGELOG.md and X, Discord, Telegram and LinkedIn drafts from your git history. CLI, GitHub Action and MCP server.",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "shill": "bin/shill.js"
+  },
+  "files": [
+    "bin/shill.js",
+    "src",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "changelog",
+    "release-notes",
+    "conventional-commits",
+    "semver",
+    "keep-a-changelog",
+    "github",
+    "github-action",
+    "cli",
+    "ai",
+    "mcp",
+    "model-context-protocol",
+    "llm",
+    "discord",
+    "telegram",
+    "twitter",
+    "launch",
+    "shill",
+    "announcements",
+    "release-posts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/shill.git"
+  },
+  "homepage": "https://github.com/OWNER/shill#readme",
+  "bugs": {
+    "url": "https://github.com/OWNER/shill/issues"
+  },
+  "license": "MIT"
+}

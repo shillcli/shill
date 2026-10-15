@@ -1,0 +1,70 @@
+name: shill
+description: Your repo's shill. Commits in, posts out. Writes release notes into the release body and drafts posts for X, Discord, Telegram and LinkedIn.
+author: shill contributors
+branding:
+  icon: volume-2
+  color: red
+
+inputs:
+  github_token:
+    description: Token used to read commits and edit the release. Needs contents write to update the release body.
+    default: ${{ github.token }}
+  tag:
+    description: Release tag to write notes for. Default is the tag of the release event.
+    default: ''
+  since:
+    description: Start of the range (tag, date or duration). Default is the previous semver tag.
+    default: ''
+  channels:
+    description: Comma separated channels to draft (x, thread, discord, telegram, linkedin or all).
+    default: x,thread,discord,telegram,linkedin
+  tone:
+    description: plain, hype or technical.
+    default: plain
+  provider:
+    description: openai, anthropic or none. Default picks whichever API key is set.
+    default: ''
+  model:
+    description: Model name override.
+    default: ''
+  voice:
+    description: Path to a file in your repo with examples of your past posts.
+    default: ''
+  openai_api_key:
+    description: OpenAI API key (pass a secret).
+    default: ''
+  anthropic_api_key:
+    description: Anthropic API key (pass a secret).
+    default: ''
+  update_release:
+    description: Write the notes into the release body between shill markers.
+    default: 'true'
+  drafts_dir:
+    description: Directory for notes.md and the channel drafts. Upload it with actions/upload-artifact.
+    default: shill-drafts
+  post:
+    description: Opt-in publishing, comma separated (discord, telegram). Empty means nothing is posted.
+    default: ''
+  discord_webhook:
+    description: Discord webhook URL (pass a secret).
+    default: ''
+  telegram_token:
+    description: Telegram bot token (pass a secret).
+    default: ''
+  telegram_chat:
+    description: Telegram chat id or @channel.
+    default: ''
+
+outputs:
+  notes:
+    description: The release notes in Markdown.
+  next_version:
+    description: Suggested next version from the commit types.
+  drafts_dir:
+    description: Directory with the draft files.
+  tweet:
+    description: The single X post draft.
+
+runs:
+  using: node20
+  main: bin/action.js
